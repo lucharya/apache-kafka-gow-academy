@@ -76,6 +76,57 @@ services:
     networks:
       - kafka-net
 
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    environment:
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - PORT=3000
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    networks:
+      - kafka-net
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - order-service
+    environment:
+      - KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - NODE_ENV=development
+    networks:
+      - kafka-net
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - payment-service
+    environment:
+      KAFKA_BROKERS: kafka1:9092,kafka2:9092,kafka3:9092
+      NODE_ENV: development
+    restart: on-failure
+    networks:
+      - kafka-net
+
 networks:
   kafka-net:
     driver: bridge
